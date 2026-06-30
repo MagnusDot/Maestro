@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ClientMessage, GuessEntry, GameMode, RoomSnapshot, ServerMessage } from "../game/types";
-import { createRoomCode, sanitizeRoomCode } from "../game/engine";
+import { createRoomCode, sanitizeRoomCode } from "../game/roomCode";
 
 type ConnectionStatus = "connecting" | "online" | "offline";
 

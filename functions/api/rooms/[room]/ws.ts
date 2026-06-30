@@ -1,5 +1,5 @@
 import type { Env } from "../../../../worker/src";
-import { sanitizeRoomCode } from "../../../../src/game/engine";
+import { sanitizeRoomCode } from "../../../../src/game/roomCode";
 
 type PagesEnv = Env & {
   ROOMS: DurableObjectNamespace;

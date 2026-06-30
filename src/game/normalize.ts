@@ -5,13 +5,14 @@ export function normalizeWord(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[’']/g, " ")
-    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/[-‐‑‒–—]/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 export function normalizeToken(value: string) {
-  return normalizeWord(value).replace(/[^a-z0-9-]/g, "");
+  return normalizeWord(value).replace(/[^a-z0-9]/g, "");
 }
 
 export function isAutoVisibleWord(word: string) {
@@ -19,7 +20,7 @@ export function isAutoVisibleWord(word: string) {
 }
 
 export function splitText(value: string) {
-  return value.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]+(?:['’-][A-Za-zÀ-ÖØ-öø-ÿ0-9]+)?|\s+|[^\sA-Za-zÀ-ÖØ-öø-ÿ0-9]/g) ?? [];
+  return value.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]+(?:[’'][A-Za-zÀ-ÖØ-öø-ÿ0-9]+)?|\s+|[^\sA-Za-zÀ-ÖØ-öø-ÿ0-9]/g) ?? [];
 }
 
 export function levenshtein(a: string, b: string) {

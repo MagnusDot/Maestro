@@ -1,5 +1,7 @@
 import { stemmer as frenchStemmer } from "@orama/stemmers/french";
+import { expandInfinitiveVerbGuess } from "./conjugation";
 import { isAutoVisibleWord, normalizeToken, normalizeWord, splitText, wordSimilarity } from "./normalize";
+import { createRoomCode, sanitizeRoomCode } from "./roomCode";
 import type { SynonymResolver } from "./synonyms";
 import type {
   Article,
@@ -20,22 +22,10 @@ type SubmitGuessOptions = {
   synonymResolver?: SynonymResolver;
 };
 
+export { createRoomCode, sanitizeRoomCode } from "./roomCode";
+
 export function now() {
   return Date.now();
-}
-
-export function createRoomCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "SM";
-  for (let i = 0; i < 4; i += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return code;
-}
-
-export function sanitizeRoomCode(code: string) {
-  const cleaned = code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-  return cleaned || createRoomCode();
 }
 
 export function createRoomState(code: string, timestamp = now()): RoomState {
@@ -181,11 +171,18 @@ export async function submitGuess(
   state.nearWords ??= {};
   const word = rawWord.trim().slice(0, 120);
   const normalizedGuess = normalizeWord(word);
-  const normalized = normalizedGuess.split(" ")[0] ?? "";
+  const guessedWords = normalizedGuess.split(" ").filter(Boolean);
+  const normalized = guessedWords[0] ?? "";
+  const acceptedGuessForms = getAcceptedGuessForms(guessedWords);
   const candidateWords = getPlayableWords(article);
   const previousGuess = state.guesses.find((guess) => guess.normalized === normalizedGuess || guess.normalized === normalized);
-  const exactMatches = candidateWords.filter((candidate) => candidate.normalized === normalized);
-  const alreadyFound = state.foundWords.includes(normalized);
+  const exactMatches = candidateWords.filter((candidate) => acceptedGuessForms.has(candidate.normalized));
+  const matchedWords = [...new Set(exactMatches.map((candidate) => candidate.normalized))];
+  const matchedWordSet = new Set(matchedWords);
+  const newlyFoundWords = matchedWords.filter((matchedWord) => !state.foundWords.includes(matchedWord));
+  const newlyFoundWordSet = new Set(newlyFoundWords);
+  const newExactMatchCount = exactMatches.filter((candidate) => newlyFoundWordSet.has(candidate.normalized)).length;
+  const alreadyFound = exactMatches.length > 0 && newlyFoundWords.length === 0;
   const isInvalid = normalized.length < 1;
   const solvedTitle = isTitleGuess(word, article.title);
   let kind: GuessEntry["kind"] = "miss";
@@ -207,9 +204,9 @@ export async function submitGuess(
   } else if (exactMatches.length > 0 && !alreadyFound) {
     const titleWords = getTitleWords(article);
     const completesTitle =
-      titleWords.includes(normalized) &&
-      titleWords.every((titleWord) => titleWord === normalized || state.foundWords.includes(titleWord));
-    const wordPoints = 80 + exactMatches.length * 20 + Math.min(60, state.streak * 10);
+      titleWords.some((titleWord) => matchedWordSet.has(titleWord)) &&
+      titleWords.every((titleWord) => matchedWordSet.has(titleWord) || state.foundWords.includes(titleWord));
+    const wordPoints = 80 + newExactMatchCount * 20 + Math.min(60, state.streak * 10);
     similarity = 100;
     if (completesTitle && !state.winners[playerId]) {
       kind = "solved";
@@ -220,7 +217,7 @@ export async function submitGuess(
     } else {
       kind = "found";
       points = wordPoints;
-      state.foundWords.push(normalized);
+      state.foundWords.push(...newlyFoundWords);
       state.streak += 1;
     }
   } else if (exactMatches.length > 0 || previousGuess) {
@@ -564,6 +561,14 @@ function semanticSimilarity(guess: string, candidate: string) {
 
 function semanticStem(word: string) {
   return frenchStemmer(normalizeToken(word));
+}
+
+function getAcceptedGuessForms(words: string[]) {
+  const forms = new Set<string>();
+  words.forEach((word) => {
+    expandInfinitiveVerbGuess(word).forEach((form) => forms.add(form));
+  });
+  return forms;
 }
 
 function revealPattern(word: string) {

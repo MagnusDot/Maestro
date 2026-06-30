@@ -1,5 +1,6 @@
 import { stemmer as frenchStemmer } from "@orama/stemmers/french";
 import { isAutoVisibleWord, normalizeToken, normalizeWord, splitText, wordSimilarity } from "./normalize";
+import type { SynonymResolver } from "./synonyms";
 import type {
   Article,
   GuessEntry,
@@ -14,6 +15,10 @@ import type {
 const PLAYER_COLORS = ["#45a7ff", "#d8a742", "#48b879", "#ee6a5a", "#9b7cff", "#8fd14f", "#d84b83", "#45c7b7"];
 const SEMANTIC_MATCH_FLOOR = 76;
 const SEMANTIC_STEM_MIN_LENGTH = 4;
+
+type SubmitGuessOptions = {
+  synonymResolver?: SynonymResolver;
+};
 
 export function now() {
   return Date.now();
@@ -163,7 +168,13 @@ function createLoadingArticle(id = "wiki-loading"): Article {
   };
 }
 
-export function submitGuess(state: RoomState, playerId: string, rawWord: string, timestamp = now()): GuessEntry {
+export async function submitGuess(
+  state: RoomState,
+  playerId: string,
+  rawWord: string,
+  timestamp = now(),
+  options: SubmitGuessOptions = {}
+): Promise<GuessEntry> {
   const article = getArticle(state.articleId, state.article);
   const player = state.players[playerId] ?? joinPlayer(state, playerId, "Joueur", timestamp);
   state.winners ??= {};
@@ -216,10 +227,11 @@ export function submitGuess(state: RoomState, playerId: string, rawWord: string,
     similarity = exactMatches.length > 0 ? 100 : Math.max(previousGuess?.similarity ?? 0, 40);
     state.streak = 0;
   } else {
-    const nearest = findNearestWord(normalized, candidateWords.map((candidate) => candidate.normalized));
+    const candidateNormalizedWords = candidateWords.map((candidate) => candidate.normalized);
+    const nearThreshold = normalized.length <= 4 ? 86 : 72;
+    const nearest = await findNearestWord(normalized, candidateNormalizedWords, nearThreshold, options.synonymResolver);
     similarity = nearest.similarity;
     target = nearest.word || undefined;
-    const nearThreshold = normalized.length <= 4 ? 86 : 72;
     if (similarity >= nearThreshold) {
       kind = "near";
       points = 20;
@@ -491,8 +503,13 @@ function estimateArticleWords(article: Article) {
   return article.sections.reduce((total, section) => total + section.body.join(" ").split(/\s+/).length, 0);
 }
 
-function findNearestWord(word: string, candidates: string[]) {
-  return candidates.reduce(
+async function findNearestWord(
+  word: string,
+  candidates: string[],
+  nearThreshold: number,
+  synonymResolver?: SynonymResolver
+) {
+  const nearest = candidates.reduce(
     (best, candidate) => {
       const score = wordProximity(word, candidate);
       if (score.semantic >= SEMANTIC_MATCH_FLOOR && best.semantic < SEMANTIC_MATCH_FLOOR) {
@@ -510,6 +527,17 @@ function findNearestWord(word: string, candidates: string[]) {
     },
     { word: "", similarity: 0, semantic: 0 }
   );
+
+  if (nearest.similarity >= nearThreshold || !synonymResolver) return nearest;
+
+  const synonymNearest = await synonymResolver(word, candidates);
+  if (!synonymNearest || synonymNearest.similarity <= nearest.similarity) return nearest;
+
+  return {
+    word: synonymNearest.word,
+    similarity: synonymNearest.similarity,
+    semantic: synonymNearest.similarity
+  };
 }
 
 function wordProximity(guess: string, candidate: string) {

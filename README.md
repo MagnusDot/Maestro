@@ -9,7 +9,7 @@ Jeu de mots coop inspiré de Pedantix, pensé pour Cloudflare Pages.
 - Articles chargés automatiquement depuis Wikipédia francophone, avec environ 100 mots jouables.
 - Des paragraphes complets sont affiches jusqu'a atteindre la taille cible.
 - Tous les mots sont masqués au départ.
-- Propositions proches affichées directement au-dessus du mot caviardé ciblé, avec rapprochement lexical francais prioritaire puis orthographe en secours.
+- Propositions proches affichées directement au-dessus du mot caviardé ciblé, avec rapprochement lexical francais, synonymes JeuxDeMots en secours, puis orthographe.
 - Indices progressifs : thème, catégorie, premières lettres, article lié, époque/lieu, titre, lettres révélées.
 - Input sticky en bas de l'article pour proposer un mot sans perdre le texte de vue.
 
@@ -18,6 +18,13 @@ Jeu de mots coop inspiré de Pedantix, pensé pour Cloudflare Pages.
 ```bash
 npm install
 npm run dev
+```
+
+Avec le Makefile :
+
+```bash
+make install
+make dev
 ```
 
 Ouvrir `http://localhost:3000`.
@@ -37,7 +44,7 @@ Le projet utilise `output: "export"` et produit `out/`.
 
 Configuration Cloudflare Pages :
 
-- Project name: `maestro`
+- Project name: `salon-maestro`
 - Build command: `npm run build`
 - Output directory: `out`
 - Node version: `24`
@@ -55,7 +62,20 @@ Deploiement typique :
 ```bash
 npm run cf:worker:deploy
 npm run build
-wrangler pages deploy out
+npx wrangler pages deploy out --project-name salon-maestro
+```
+
+Equivalent avec le Makefile :
+
+```bash
+make deploy
+```
+
+Si seul le front a change et que le Worker est deja deploye :
+
+```bash
+make build
+make pages-deploy
 ```
 
 Le Durable Object doit etre deploye et bindé au projet Pages sous le nom `ROOMS`.

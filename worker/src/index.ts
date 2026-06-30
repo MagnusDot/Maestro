@@ -13,6 +13,7 @@ import {
   submitGuess,
   touchPlayer
 } from "../../src/game/engine";
+import { createJeuxDeMotsSynonymResolver } from "../../src/game/synonyms";
 import type { ClientMessage, GuessEntry, RoomState, ServerMessage } from "../../src/game/types";
 import { fallbackArticle, fetchRandomWikipediaArticle } from "../../src/game/wiki";
 
@@ -44,6 +45,7 @@ export default {
 
 export class PedantixRoom {
   private sessions = new Set<Session>();
+  private readonly synonymResolver = createJeuxDeMotsSynonymResolver(fetch);
 
   constructor(
     private readonly state: DurableObjectState,
@@ -120,7 +122,9 @@ export class PedantixRoom {
         return;
       }
 
-      const result = submitGuess(roomState, message.playerId, message.word, timestamp);
+      const result = await submitGuess(roomState, message.playerId, message.word, timestamp, {
+        synonymResolver: this.synonymResolver
+      });
       await this.save(roomState);
       this.broadcastGuessResult(roomState, result);
       if (result.kind === "solved") {

@@ -14,6 +14,7 @@ import {
   submitGuess,
   touchPlayer
 } from "../src/game/engine";
+import { createJeuxDeMotsSynonymResolver } from "../src/game/synonyms";
 import type { ClientMessage, GuessEntry, RoomState, ServerMessage } from "../src/game/types";
 import { fallbackArticle, fetchRandomWikipediaArticle } from "../src/game/wiki";
 
@@ -28,6 +29,7 @@ const ADMIN_PASSWORD = "alois";
 const rooms = new Map<string, RoomState>();
 const sessions = new Set<Session>();
 const server = new WebSocketServer({ port: PORT });
+const synonymResolver = createJeuxDeMotsSynonymResolver(fetch);
 
 server.on("connection", async (socket, request) => {
   const code = sanitizeRoomCode(extractRoomCode(request.url ?? ""));
@@ -88,7 +90,9 @@ async function handleMessage(session: Session, data: string) {
       return;
     }
 
-    const result = submitGuess(room, message.playerId, message.word, timestamp);
+    const result = await submitGuess(room, message.playerId, message.word, timestamp, {
+      synonymResolver
+    });
     broadcastGuessResult(session.roomCode, room, result);
     if (result.kind === "solved") {
       broadcast(session.roomCode, {

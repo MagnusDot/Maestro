@@ -615,6 +615,7 @@ function ArticleTabs({ state }: { state: RoomSnapshot }) {
         Source : {state.article.meta.source}
         {state.article.meta.source.includes("Wikipedia") && " "}
         {state.article.meta.source.includes("Wikipedia") ? <ExternalLink size={14} /> : null}
+        <PedantixCredit className="source-credit" />
       </div>
     </div>
   );
@@ -704,7 +705,6 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
           <Sparkles size={16} />
           Les mots trouves restent surlignes. Les indices temporels revelent des themes, lettres et sections.
         </span>
-        <PedantixCredit />
       </footer>
     </article>
   );

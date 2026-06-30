@@ -210,16 +210,18 @@ export async function submitGuess(
       titleWords.includes(normalized) &&
       titleWords.every((titleWord) => titleWord === normalized || state.foundWords.includes(titleWord));
     const wordPoints = 80 + exactMatches.length * 20 + Math.min(60, state.streak * 10);
-    kind = "found";
-    points = wordPoints;
     similarity = 100;
-    state.foundWords.push(normalized);
-    state.streak += 1;
     if (completesTitle && !state.winners[playerId]) {
       kind = "solved";
       points = wordPoints + 1000;
       target = normalizeTitle(article.title);
       recordWinner(state, player, playerId, timestamp);
+      state.streak = 0;
+    } else {
+      kind = "found";
+      points = wordPoints;
+      state.foundWords.push(normalized);
+      state.streak += 1;
     }
   } else if (exactMatches.length > 0 || previousGuess) {
     kind = "duplicate";
@@ -308,7 +310,7 @@ export function createRoomSnapshot(state: RoomState, timestamp = now(), viewerId
     players: Object.values(state.players)
       .sort((a, b) => Number(b.online) - Number(a.online) || b.score - a.score)
       .slice(0, 8),
-    guesses: state.guesses.slice(0, 30).map((guess) => sanitizeGuessForViewer(guess, hasWon || guess.playerId === viewerId)),
+    guesses: state.guesses.slice(0, 30).map((guess) => sanitizeGuessForViewer(guess, guess.playerId === viewerId)),
     hints,
     nextHint,
     progress: {

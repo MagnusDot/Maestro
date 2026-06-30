@@ -4,7 +4,7 @@ Briefing projet pour les prochains agents IA intervenant sur ce repo.
 
 ## Vue d'ensemble
 
-Salon Maestro est un jeu de mots cooperatif inspire de Pedantix. Les joueurs creent une room, rejoignent via un lien d'invitation, puis proposent des mots pour reveler progressivement un article Wikipedia francophone masque. Le titre de l'article est la reponse finale.
+Salon Maestro est un jeu de mots cooperatif. Les joueurs creent une room, rejoignent via un lien d'invitation, puis proposent des mots pour reveler progressivement un article Wikipedia francophone masque. Le titre de l'article est la reponse finale.
 
 Le projet cible Cloudflare Pages avec une app Next.js exportee en statique, des Pages Functions pour router les endpoints de room, et un Worker Cloudflare avec Durable Object pour porter l'etat temps reel et les WebSockets.
 

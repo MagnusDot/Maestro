@@ -203,8 +203,7 @@ function broadcast(code: string, message: ServerMessage) {
 function broadcastGuessResult(code: string, room: RoomState, result: GuessEntry) {
   for (const session of sessions) {
     if (session.roomCode !== code) continue;
-    const canSeeAnswer =
-      result.kind !== "solved" || result.playerId === session.playerId || Boolean(session.playerId && room.winners?.[session.playerId]);
+    const canSeeAnswer = result.kind !== "solved" || result.playerId === session.playerId;
     send(session.socket, {
       type: "guessResult",
       result: canSeeAnswer

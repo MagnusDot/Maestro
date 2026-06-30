@@ -1,6 +1,6 @@
 # Salon Maestro
 
-Jeu de mots coop inspiré de Pedantix, pensé pour Cloudflare Pages.
+Jeu de mots coop pensé pour Cloudflare Pages.
 
 ## Fonctionnalités
 

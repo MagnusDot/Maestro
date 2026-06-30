@@ -274,7 +274,7 @@ export class PedantixRoom {
 
   private broadcastGuessResult(roomState: RoomState, result: GuessEntry) {
     for (const session of this.sessions) {
-      const canSeeAnswer = result.kind !== "solved" || result.playerId === session.playerId || Boolean(session.playerId && roomState.winners?.[session.playerId]);
+      const canSeeAnswer = result.kind !== "solved" || result.playerId === session.playerId;
       this.send(session.socket, {
         type: "guessResult",
         result: canSeeAnswer

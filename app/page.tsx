@@ -349,7 +349,7 @@ function StartScreen({
         <div className="start-brand">
           <Image src="/maestro-mascot.png" width={118} height={118} alt="Mascotte Salon Maestro" priority />
           <div>
-            <p className="eyebrow">Wikipedia cache, esprit Pedantix</p>
+            <p className="eyebrow">Wikipedia cache, jeu collaboratif</p>
             <h1>Salon Maestro</h1>
             <span>Choisissez comment lancer la partie.</span>
           </div>
@@ -726,7 +726,7 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
 function PedantixCredit({ className }: { className?: string }) {
   return (
     <a className={clsx("pedantix-credit", className)} href={PEDANTIX_URL} target="_blank" rel="noreferrer">
-      Inspire par Pedantix
+      Pedantix
       <ExternalLink size={13} />
     </a>
   );

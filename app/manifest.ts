@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Salon Maestro",
     short_name: "Maestro",
-    description: "Jeu cooperatif inspire de Pedantix avec rooms temps reel et articles Wikipedia.",
+    description: "Jeu cooperatif avec rooms temps reel et articles Wikipedia.",
     start_url: "/",
     display: "standalone",
     background_color: "#04141a",

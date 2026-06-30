@@ -64,7 +64,8 @@ export const ARTICLES: Article[] = [
         heading: "Heritage",
         body: [
           "La periode gothique influence durablement la representation du sacre, l'organisation des villes et l'histoire de l'art europeen.",
-          "Au dix-neuvieme siecle, le mouvement neo-gothique ravive l'interet pour ces formes monumentales."
+          "Au dix-neuvieme siecle, le mouvement neo-gothique ravive l'interet pour ces formes monumentales.",
+          "Ces edifices restent des reperes urbains, techniques et symboliques majeurs."
         ]
       }
     ]
@@ -98,7 +99,8 @@ export const ARTICLES: Article[] = [
         heading: "Enjeux",
         body: [
           "La discipline joue un role central dans la comprehension du changement climatique et de la biodiversite marine.",
-          "Elle contribue aussi a la gestion des ressources, des risques littoraux et de la pollution."
+          "Elle contribue aussi a la gestion des ressources, des risques littoraux et de la pollution.",
+          "Ses resultats guident les politiques maritimes et la protection des littoraux."
         ]
       }
     ]

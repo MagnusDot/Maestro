@@ -6,8 +6,8 @@ Jeu de mots coop inspiré de Pedantix, pensé pour Cloudflare Pages.
 
 - Entrée explicite : créer une room coop ou jouer seul.
 - Rooms avec lien d'invitation et WebSocket temps réel.
-- Articles chargés automatiquement depuis Wikipédia francophone, avec au moins 100 mots jouables.
-- Seul le premier paragraphe admissible de l'article est utilisé.
+- Articles chargés automatiquement depuis Wikipédia francophone, avec environ 100 mots jouables.
+- Des paragraphes complets sont affiches jusqu'a atteindre la taille cible.
 - Tous les mots sont masqués au départ.
 - Propositions proches affichées directement au-dessus du mot caviardé ciblé, avec similarité de sens prioritaire puis orthographe en secours.
 - Indices progressifs : thème, catégorie, premières lettres, article lié, époque/lieu, titre, lettres révélées.

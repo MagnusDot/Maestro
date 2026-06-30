@@ -20,7 +20,7 @@ type WikiResponse = {
 };
 
 const API_URL = "https://fr.wikipedia.org/w/api.php";
-const MIN_WIKIPEDIA_WORDS = 100;
+const TARGET_ARTICLE_WORDS = 100;
 const MAX_RANDOM_ARTICLE_ATTEMPTS = 12;
 
 export async function fetchRandomWikipediaArticle(fetcher: FetchLike = fetch): Promise<Article> {
@@ -90,16 +90,17 @@ function buildArticleFromPage(page: WikiPage): Article {
 }
 
 function parseSections(extract: string): Article["sections"] {
-  const firstParagraph = extract
+  const paragraphs = extract
     .replace(/\r/g, "")
     .split("\n")
     .map(cleanParagraph)
-    .find((line) => countWords(line) >= MIN_WIKIPEDIA_WORDS);
+    .filter(Boolean);
+  const body = selectWholeParagraphs(paragraphs, TARGET_ARTICLE_WORDS);
 
   return [
     {
       heading: "Introduction",
-      body: firstParagraph ? [cleanParagraph(firstParagraph)] : []
+      body
     }
   ];
 }
@@ -117,6 +118,19 @@ function countSectionWords(sections: Article["sections"]) {
 
 function countWords(value: string) {
   return value.split(/\s+/).filter(Boolean).length;
+}
+
+function selectWholeParagraphs(paragraphs: string[], targetWords: number) {
+  const selected: string[] = [];
+  let wordCount = 0;
+
+  for (const paragraph of paragraphs) {
+    selected.push(paragraph);
+    wordCount += countWords(paragraph);
+    if (wordCount >= targetWords) break;
+  }
+
+  return selected;
 }
 
 function cleanCategory(value?: string) {
@@ -163,20 +177,21 @@ function isPlayableArticle(article: Article) {
   const paragraphCount = article.sections.reduce((total, section) => total + section.body.length, 0);
   return (
     article.title.length > 3 &&
-    paragraphCount === 1 &&
-    countSectionWords(article.sections) >= MIN_WIKIPEDIA_WORDS &&
+    paragraphCount > 0 &&
+    countSectionWords(article.sections) >= TARGET_ARTICLE_WORDS &&
     countCandidateWords(article) >= 22
   );
 }
 
 export function fallbackArticle() {
   const article = ARTICLES[Math.floor(Math.random() * ARTICLES.length)];
+  const paragraphs = article.sections.flatMap((section) => section.body).map(cleanParagraph).filter(Boolean);
   return {
     ...article,
     sections: [
       {
         heading: "Introduction",
-        body: [article.sections[0]?.body[0] ?? ""].filter(Boolean)
+        body: selectWholeParagraphs(paragraphs, TARGET_ARTICLE_WORDS)
       }
     ],
     provider: "fallback" as const,

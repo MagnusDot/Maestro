@@ -760,7 +760,7 @@ button {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding: 0 28px 154px;
+  padding: 0 28px 224px;
   color: #2b241a;
   background:
     linear-gradient(90deg, rgba(84, 65, 36, 0.06) 1px, transparent 1px),
@@ -1009,7 +1009,7 @@ button {
   align-items: center;
   gap: 14px;
   margin-top: 24px;
-  padding-top: 12px;
+  padding: 12px 0 34px;
   color: #3f3422;
   font-size: 13px;
   font-weight: 750;
@@ -1700,7 +1700,7 @@ button {
   }
 
   .article-surface {
-    padding-bottom: 188px;
+    padding-bottom: 258px;
   }
 
   .article-surface footer {

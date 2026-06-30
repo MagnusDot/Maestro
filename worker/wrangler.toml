@@ -1,0 +1,11 @@
+name = "pedantix-room-worker"
+main = "src/index.ts"
+compatibility_date = "2026-06-30"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "PedantixRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PedantixRoom"]

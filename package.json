@@ -1,0 +1,35 @@
+{
+  "name": "salon-maestro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n next,rooms -c cyan,magenta \"next dev -p 3000\" \"tsx scripts/local-room-server.ts\"",
+    "build": "next build",
+    "pages:build": "next build",
+    "preview": "wrangler pages dev out --compatibility-date=2026-06-30",
+    "cf:worker:dev": "wrangler dev --config worker/wrangler.toml --port 8787",
+    "cf:worker:deploy": "wrangler deploy --config worker/wrangler.toml",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260620.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@types/ws": "^8.5.13",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.23.0",
+    "ws": "^8.18.0"
+  }
+}

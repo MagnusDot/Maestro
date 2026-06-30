@@ -1,0 +1,8 @@
+name = "pedantix-pages"
+compatibility_date = "2026-06-30"
+pages_build_output_dir = "out"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "PedantixRoom"
+script_name = "pedantix-room-worker"

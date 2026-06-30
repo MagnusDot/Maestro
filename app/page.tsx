@@ -222,7 +222,7 @@ export default function Home() {
         <aside className="right-rail">
           <HistoryPanel guesses={visibleGuesses} filter={historyFilter} setFilter={setHistoryFilter} />
           <ScorePanel state={state} />
-          <HintsPanel hints={state.hints} serverTime={state.serverTime} nextHint={state.nextHint} />
+          <HintsPanel hints={state.hints} serverTime={state.serverTime} />
         </aside>
       </div>
 
@@ -714,10 +714,6 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
           <Sparkles size={16} />
           Les mots trouves restent surlignes. Les indices temporels revelent des themes, lettres et sections.
         </span>
-        <div className="article-footer-links">
-          <PedantixCredit />
-          <LegalLinks />
-        </div>
       </footer>
     </article>
   );
@@ -898,7 +894,14 @@ function ScorePanel({ state }: { state: RoomSnapshot }) {
   );
 }
 
-function HintsPanel({ hints, serverTime, nextHint }: { hints: Hint[]; serverTime: number; nextHint?: Hint }) {
+function HintsPanel({ hints, serverTime }: { hints: Hint[]; serverTime: number }) {
+  const liveServerTime = useLiveServerTime(serverTime);
+  const liveHints = useMemo(
+    () => hints.map((hint) => ({ ...hint, unlocked: hint.unlocked || liveServerTime >= hint.unlockAt })),
+    [hints, liveServerTime]
+  );
+  const liveNextHint = liveHints.find((hint) => !hint.unlocked);
+
   return (
     <section className="right-section hints-panel">
       <div className="section-head">
@@ -906,12 +909,12 @@ function HintsPanel({ hints, serverTime, nextHint }: { hints: Hint[]; serverTime
           <Sparkles size={18} />
           Indices progressifs
         </h2>
-        <span>{nextHint ? `Prochain dans ${formatCountdown(nextHint.unlockAt - serverTime)}` : "Tous reveles"}</span>
+        <span>{liveNextHint ? `Prochain dans ${formatCountdown(liveNextHint.unlockAt - liveServerTime)}` : "Tous reveles"}</span>
       </div>
       <div className="hint-list">
-        {hints.map((hint) => (
+        {liveHints.map((hint) => (
           <div key={hint.id} className={clsx("hint-row", hint.unlocked && "unlocked")}>
-            <div className="hint-time">{formatDuration(hint.unlockAt - (hints[0]?.unlockAt ?? hint.unlockAt))}</div>
+            <div className="hint-time">{formatDuration(hint.unlockAt - (liveHints[0]?.unlockAt ?? hint.unlockAt))}</div>
             <span className="hint-dot" />
             <div className="hint-body">
               <HintIcon hint={hint} />
@@ -926,6 +929,25 @@ function HintsPanel({ hints, serverTime, nextHint }: { hints: Hint[]; serverTime
       </div>
     </section>
   );
+}
+
+function useLiveServerTime(serverTime: number) {
+  const [liveServerTime, setLiveServerTime] = useState(serverTime);
+
+  useEffect(() => {
+    if (!serverTime) {
+      setLiveServerTime(0);
+      return;
+    }
+
+    const receivedAt = Date.now();
+    const update = () => setLiveServerTime(serverTime + Date.now() - receivedAt);
+    update();
+    const interval = window.setInterval(update, 1000);
+    return () => window.clearInterval(interval);
+  }, [serverTime]);
+
+  return liveServerTime;
 }
 
 function HintIcon({ hint }: { hint: Hint }) {

@@ -611,10 +611,6 @@ function ArticleTabs({ state }: { state: RoomSnapshot }) {
         <BookOpen size={18} />
         Article
       </div>
-      <div className="tab">
-        <MessageSquare size={18} />
-        Discussion
-      </div>
       <div className="article-source">
         Source : {state.article.meta.source}
         {state.article.meta.source.includes("Wikipedia") && " "}

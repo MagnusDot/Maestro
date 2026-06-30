@@ -35,7 +35,3 @@ export function LegalPage({ title, eyebrow, updatedAt, children }: LegalPageProp
     </main>
   );
 }
-
-export function MissingLegalInfo({ children }: { children: ReactNode }) {
-  return <span className="legal-placeholder">{children}</span>;
-}

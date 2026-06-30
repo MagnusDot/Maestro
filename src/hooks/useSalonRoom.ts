@@ -22,6 +22,7 @@ const EMPTY_OUTCOME: RoomSnapshot["outcome"] = {
   winnerCount: 0,
   revealAvailable: false
 };
+const PLAYER_ID_STORAGE_KEY = "salon-maestro-player-id";
 
 export function useSalonRoom() {
   const [roomCode, setRoomCode] = useState("");
@@ -43,13 +44,7 @@ export function useSalonRoom() {
     setMounted(true);
     const params = new URLSearchParams(window.location.search);
     const urlRoom = params.get("room");
-    const storedPlayerId = localStorage.getItem("salon-maestro-player-id");
-    const storedPlayerName = localStorage.getItem("salon-maestro-player-name");
-    const id = storedPlayerId || crypto.randomUUID();
-
-    if (!storedPlayerId) localStorage.setItem("salon-maestro-player-id", id);
-    if (storedPlayerName) setPlayerName(storedPlayerName);
-    setPlayerId(id);
+    setPlayerId(getOrCreatePlayerId());
     setPageBaseUrl(`${window.location.origin}${window.location.pathname}`);
     if (urlRoom) setRoomCode(sanitizeRoomCode(urlRoom));
   }, []);
@@ -204,7 +199,6 @@ export function useSalonRoom() {
   const updatePlayerName = useCallback((name: string) => {
     const cleaned = name.slice(0, 18);
     setPlayerName(cleaned);
-    localStorage.setItem("salon-maestro-player-name", cleaned);
   }, []);
 
   const inviteUrl = useMemo(() => {
@@ -270,4 +264,18 @@ function buildSocketUrl(roomCode: string) {
 function updateRoomUrl(code: string) {
   const next = `${window.location.pathname}?room=${code}`;
   window.history.replaceState(null, "", next);
+}
+
+function getOrCreatePlayerId() {
+  const generated = crypto.randomUUID();
+
+  try {
+    const stored = window.localStorage.getItem(PLAYER_ID_STORAGE_KEY)?.trim();
+    if (stored && /^[A-Za-z0-9-]{8,80}$/.test(stored)) return stored;
+    window.localStorage.setItem(PLAYER_ID_STORAGE_KEY, generated);
+  } catch {
+    // Some browsers can block localStorage; the in-memory id still keeps the session playable.
+  }
+
+  return generated;
 }

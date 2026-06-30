@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalPage, MissingLegalInfo } from "../_components/LegalPage";
+import { LegalPage } from "../_components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialite",
@@ -12,18 +12,17 @@ export default function ConfidentialitePage() {
       <section>
         <h2>Responsable du traitement</h2>
         <p>
-          Le responsable du traitement doit etre complete avant publication publique du service :
-          {" "}
-          <MissingLegalInfo>A completer</MissingLegalInfo>.
+          Salon Maestro est un projet personnel publie sous le nom Maestro. Le service ne cree pas de compte utilisateur
+          et ne met pas en place de suivi publicitaire ou analytique.
         </p>
       </section>
 
       <section>
-        <h2>Donnees traitees</h2>
-        <p>Salon Maestro limite les donnees au fonctionnement du jeu :</p>
+        <h2>Donnees utilisees pendant une partie</h2>
+        <p>Salon Maestro utilise uniquement les informations necessaires au fonctionnement immediat du jeu :</p>
         <ul>
           <li>nom visible choisi par le joueur ;</li>
-          <li>identifiant local de joueur stocke dans le navigateur ;</li>
+          <li>identifiant local de joueur conserve dans le navigateur ;</li>
           <li>code de room, score, propositions et progression de la manche ;</li>
           <li>messages techniques WebSocket necessaires au temps reel.</li>
         </ul>
@@ -32,19 +31,26 @@ export default function ConfidentialitePage() {
       <section>
         <h2>Stockage local</h2>
         <p>
-          Le navigateur peut conserver un identifiant de joueur et le nom visible via localStorage afin de reconnaitre
-          un joueur lorsqu'il rejoint une room. Ces informations peuvent etre supprimees depuis les reglages du
-          navigateur.
+          Salon Maestro conserve un identifiant de joueur dans le localStorage du navigateur afin de reconnaitre un
+          joueur lorsqu'il recharge une room. Le nom visible et l'historique de partie ne sont pas conserves
+          volontairement dans le localStorage.
         </p>
       </section>
 
       <section>
-        <h2>Rooms et conservation</h2>
+        <h2>Conservation cote serveur</h2>
         <p>
-          En production Cloudflare, l'etat d'une room peut etre conserve par le Durable Object associe a son code. La
-          duree de conservation operationnelle doit etre fixee avant publication :
-          {" "}
-          <MissingLegalInfo>A completer</MissingLegalInfo>.
+          Aucune base de donnees de joueurs n'est constituee. L'etat d'une room peut etre conserve dans le stockage du
+          Durable Object associe a son code afin de maintenir la partie pendant un rechargement ou une courte
+          interruption. Il est supprime automatiquement apres 600 secondes d'inactivite.
+        </p>
+      </section>
+
+      <section>
+        <h2>Cookies et mesure d'audience</h2>
+        <p>
+          Salon Maestro ne depose pas de cookies de suivi et n'integre pas d'outil de mesure d'audience publicitaire ou
+          comportementale.
         </p>
       </section>
 
@@ -59,10 +65,8 @@ export default function ConfidentialitePage() {
       <section>
         <h2>Droits des utilisateurs</h2>
         <p>
-          Selon le cadre applicable, les utilisateurs peuvent demander l'acces, la rectification ou la suppression de
-          leurs donnees. L'adresse de contact dediee doit etre renseignee ici :
-          {" "}
-          <MissingLegalInfo>A completer</MissingLegalInfo>.
+          Comme aucune base de comptes ou d'historique nominatif n'est maintenue, l'essentiel des donnees de jeu
+          disparait avec la room. L'identifiant local peut etre efface depuis les reglages du navigateur.
         </p>
       </section>
     </LegalPage>

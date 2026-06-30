@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalPage, MissingLegalInfo } from "../_components/LegalPage";
+import { LegalPage } from "../_components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Mentions legales",
@@ -12,22 +12,15 @@ export default function MentionsLegalesPage() {
       <section>
         <h2>Editeur du service</h2>
         <p>
-          Salon Maestro est un projet de jeu cooperatif en ligne. Les informations d'identification de l'editeur
-          doivent etre completees avant une mise en production publique.
+          Salon Maestro est un projet personnel de jeu cooperatif en ligne, publie sous le nom Maestro.
         </p>
         <dl>
-          <dt>Nom ou raison sociale</dt>
-          <dd>
-            <MissingLegalInfo>A completer</MissingLegalInfo>
-          </dd>
-          <dt>Adresse</dt>
-          <dd>
-            <MissingLegalInfo>A completer</MissingLegalInfo>
-          </dd>
+          <dt>Editeur</dt>
+          <dd>Projet personnel Maestro</dd>
+          <dt>Depot source</dt>
+          <dd>github.com/magnusdot/maestro</dd>
           <dt>Contact</dt>
-          <dd>
-            <MissingLegalInfo>A completer</MissingLegalInfo>
-          </dd>
+          <dd>Via le depot GitHub du projet</dd>
         </dl>
       </section>
 

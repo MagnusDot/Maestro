@@ -18,6 +18,9 @@ import type { ClientMessage, GuessEntry, RoomState, ServerMessage } from "../../
 import { fallbackArticle, fetchRandomWikipediaArticle } from "../../src/game/wiki";
 
 const ADMIN_PASSWORD = "alois";
+const ROOM_STORAGE_KEY = "room";
+const LAST_ACTIVITY_STORAGE_KEY = "lastActivityAt";
+const ROOM_INACTIVITY_TTL_MS = 600_000;
 
 export type Env = {
   ROOMS: DurableObjectNamespace;
@@ -46,11 +49,29 @@ export default {
 export class PedantixRoom {
   private sessions = new Set<Session>();
   private readonly synonymResolver = createJeuxDeMotsSynonymResolver(fetch);
+  private roomState?: RoomState;
 
   constructor(
     private readonly state: DurableObjectState,
     private readonly env: Env
   ) {}
+
+  async alarm() {
+    const lastActivityAt = await this.state.storage.get<number>(LAST_ACTIVITY_STORAGE_KEY);
+    const now = Date.now();
+
+    if (this.sessions.size > 0) {
+      await this.scheduleCleanup(now);
+      return;
+    }
+
+    if (!lastActivityAt || now - lastActivityAt >= ROOM_INACTIVITY_TTL_MS) {
+      await this.clearStoredRoom();
+      return;
+    }
+
+    await this.state.storage.setAlarm(lastActivityAt + ROOM_INACTIVITY_TTL_MS);
+  }
 
   async fetch(request: Request) {
     const url = new URL(request.url);
@@ -193,8 +214,20 @@ export class PedantixRoom {
   }
 
   private async loadState(code: string) {
-    const stored = await this.state.storage.get<RoomState>("room");
-    if (stored) return stored;
+    if (this.roomState) return this.roomState;
+    const stored = await this.state.storage.get<RoomState>(ROOM_STORAGE_KEY);
+    const lastActivityAt = await this.state.storage.get<number>(LAST_ACTIVITY_STORAGE_KEY);
+    if (stored && !lastActivityAt) {
+      await this.save(stored);
+      return stored;
+    }
+    if (stored && lastActivityAt && Date.now() - lastActivityAt < ROOM_INACTIVITY_TTL_MS) {
+      this.roomState = stored;
+      await this.scheduleCleanup(lastActivityAt);
+      return stored;
+    }
+    if (stored) await this.clearStoredRoom();
+
     const created = createRoomState(code);
     markArticleLoading(created);
     await this.save(created);
@@ -212,7 +245,22 @@ export class PedantixRoom {
   }
 
   private async save(roomState: RoomState) {
-    await this.state.storage.put("room", roomState);
+    this.roomState = roomState;
+    const now = Date.now();
+    await this.state.storage.put(ROOM_STORAGE_KEY, roomState);
+    await this.state.storage.put(LAST_ACTIVITY_STORAGE_KEY, now);
+    await this.scheduleCleanup(now);
+  }
+
+  private async scheduleCleanup(lastActivityAt: number) {
+    await this.state.storage.setAlarm(lastActivityAt + ROOM_INACTIVITY_TTL_MS);
+  }
+
+  private async clearStoredRoom() {
+    this.roomState = undefined;
+    await this.state.storage.delete(ROOM_STORAGE_KEY);
+    await this.state.storage.delete(LAST_ACTIVITY_STORAGE_KEY);
+    await this.state.storage.deleteAlarm();
   }
 
   private broadcastState(roomState: RoomState) {

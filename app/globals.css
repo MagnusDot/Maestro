@@ -216,6 +216,33 @@ button {
   justify-self: end;
 }
 
+.start-footer-links,
+.article-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legal-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legal-links a {
+  color: rgba(246, 242, 232, 0.62);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.legal-links a:hover {
+  color: var(--gold-soft);
+}
+
 .topbar {
   min-height: 78px;
   display: grid;
@@ -1001,6 +1028,38 @@ button {
   color: #8a641f;
 }
 
+.article-footer-links {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.article-surface footer .pedantix-credit {
+  padding: 6px 9px;
+  color: #2f2414;
+  border: 1px solid rgba(101, 79, 39, 0.28);
+  border-radius: 7px;
+  background: rgba(215, 168, 78, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.article-surface footer .pedantix-credit:hover {
+  color: #15120c;
+  border-color: rgba(101, 79, 39, 0.44);
+  background: rgba(215, 168, 78, 0.3);
+}
+
+.article-surface footer .legal-links {
+  justify-content: flex-end;
+}
+
+.article-surface footer .legal-links a {
+  color: #4a3b24;
+}
+
+.article-surface footer .legal-links a:hover {
+  color: #15120c;
+}
+
 .guess-composer {
   position: absolute;
   left: 0;
@@ -1444,6 +1503,120 @@ button {
   text-transform: uppercase;
 }
 
+.legal-shell {
+  min-height: 100vh;
+  padding: 32px 18px;
+  background:
+    linear-gradient(90deg, rgba(215, 168, 78, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    var(--ink-950);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.legal-document {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: clamp(22px, 5vw, 46px);
+  color: #332817;
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(92, 73, 42, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(92, 73, 42, 0.08) 1px, transparent 1px),
+    var(--paper);
+  background-size: 42px 42px, 42px 42px, auto;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.legal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  color: #7a6744;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.legal-nav a,
+.legal-footer a {
+  color: #574019;
+  text-decoration: none;
+}
+
+.legal-nav a:hover,
+.legal-footer a:hover {
+  color: #15120c;
+}
+
+.legal-header {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.legal-header h1 {
+  margin: 6px 0 10px;
+  color: #2f2312;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(38px, 7vw, 70px);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.legal-header p:last-child {
+  margin: 0;
+  color: #6f5e3f;
+  font-weight: 800;
+}
+
+.legal-content {
+  display: grid;
+  gap: 24px;
+  padding-top: 28px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.legal-content section {
+  display: grid;
+  gap: 10px;
+}
+
+.legal-content h2 {
+  margin: 0;
+  color: #2f2312;
+  font-size: 22px;
+}
+
+.legal-content p,
+.legal-content ul,
+.legal-content dl {
+  margin: 0;
+}
+
+.legal-content dl {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 8px 18px;
+}
+
+.legal-content dt {
+  color: #6d5528;
+  font-weight: 900;
+}
+
+.legal-content dd {
+  margin: 0;
+}
+
+.legal-footer {
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid var(--paper-line);
+  font-weight: 900;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1526,6 +1699,16 @@ button {
     justify-self: start;
   }
 
+  .start-footer-links,
+  .article-footer-links {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .article-footer-links {
+    margin-left: 0;
+  }
+
   .game-layout {
     height: auto;
     min-height: auto;
@@ -1561,6 +1744,10 @@ button {
   .article-surface footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .legal-content dl {
+    grid-template-columns: 1fr;
   }
 
   .article-progress,

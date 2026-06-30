@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties, FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
@@ -45,6 +46,11 @@ const EMPTY_OUTCOME: RoomSnapshot["outcome"] = {
 };
 const ADMIN_GUESS_PREFIX = "mdp:";
 const PEDANTIX_URL = "https://pedantix.certitudes.org/";
+const LEGAL_LINKS = [
+  { href: "/mentions-legales", label: "Mentions legales" },
+  { href: "/confidentialite", label: "Confidentialite" },
+  { href: "/conditions-utilisation", label: "Conditions" }
+];
 
 const DEMO_STATE: RoomSnapshot = {
   room: {
@@ -380,7 +386,10 @@ function StartScreen({
           </button>
         </form>
 
-        <PedantixCredit className="start-credit" />
+        <div className="start-footer-links">
+          <PedantixCredit />
+          <LegalLinks />
+        </div>
       </section>
     </main>
   );
@@ -705,6 +714,10 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
           <Sparkles size={16} />
           Les mots trouves restent surlignes. Les indices temporels revelent des themes, lettres et sections.
         </span>
+        <div className="article-footer-links">
+          <PedantixCredit />
+          <LegalLinks />
+        </div>
       </footer>
     </article>
   );
@@ -716,6 +729,18 @@ function PedantixCredit({ className }: { className?: string }) {
       Inspire par Pedantix
       <ExternalLink size={13} />
     </a>
+  );
+}
+
+function LegalLinks() {
+  return (
+    <nav className="legal-links" aria-label="Pages legales">
+      {LEGAL_LINKS.map((link) => (
+        <Link key={link.href} href={link.href}>
+          {link.label}
+        </Link>
+      ))}
+    </nav>
   );
 }
 

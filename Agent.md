@@ -90,7 +90,7 @@ En production Cloudflare, le client ouvre le WebSocket sur le meme host Pages :
 wss://<site>/api/rooms/:code/ws
 ```
 
-Cloudflare Pages Functions recoit la requete, resolve le Durable Object par nom de room via `env.ROOMS.idFromName(code)`, puis transfere la requete au stub Durable Object. Le Durable Object garde l'etat persistant de la room dans `state.storage` sous la cle `room`.
+Cloudflare Pages Functions recoit la requete, resolve le Durable Object par nom de room via `env.ROOMS.idFromName(code)`, puis transfere la requete au stub Durable Object. Le Durable Object garde l'etat de la room dans `state.storage` sous la cle `room`, avec une alarm de cleanup apres 600 secondes d'inactivite.
 
 ## Flux de jeu
 
@@ -182,7 +182,7 @@ Messages serveur vers client :
 - `guessResult`
 - `revealTitle`
 
-Le serveur conserve au plus 80 guesses dans l'etat, mais les snapshots clients exposent les 30 plus recentes.
+Le serveur garde au plus 80 guesses dans l'etat de la room active, mais les snapshots clients exposent les 30 plus recentes.
 
 ## Regles et scoring
 
@@ -203,7 +203,7 @@ Le serveur conserve au plus 80 guesses dans l'etat, mais les snapshots clients e
 - `node_modules`, `.next`, `out`, `.wrangler`, `.vercel`, `.dev.vars`, `dist` et `.DS_Store` sont ignores par Git.
 - `tsconfig.tsbuildinfo` est actuellement present dans le repo local. S'il n'est pas voulu dans l'historique, l'ajouter a `.gitignore` avant commit.
 - Les accents sont normalises pour les guesses via `normalizeWord`, donc les joueurs peuvent saisir sans accents.
-- Le serveur local garde les rooms en memoire uniquement. Un redemarrage efface les rooms locales.
+- Le serveur local garde les rooms en memoire uniquement. Le Worker Cloudflare persiste les rooms dans Durable Object storage et les supprime apres 600 secondes d'inactivite.
 
 ## Verification recommandee apres changement
 

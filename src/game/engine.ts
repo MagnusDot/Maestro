@@ -184,13 +184,14 @@ export async function submitGuess(
   const newExactMatchCount = exactMatches.filter((candidate) => newlyFoundWordSet.has(candidate.normalized)).length;
   const alreadyFound = exactMatches.length > 0 && newlyFoundWords.length === 0;
   const isInvalid = normalized.length < 1;
+  const articleUnavailable = state.articleStatus === "fallback";
   const solvedTitle = isTitleGuess(word, article.title);
   let kind: GuessEntry["kind"] = "miss";
   let points = 0;
   let similarity = 0;
   let target: string | undefined;
 
-  if (isInvalid) {
+  if (isInvalid || articleUnavailable) {
     kind = "invalid";
   } else if (solvedTitle) {
     const alreadyWinner = Boolean(state.winners[playerId]);
@@ -265,7 +266,7 @@ export async function submitGuess(
     kind,
     similarity,
     points,
-    matches: exactMatches.length,
+    matches: articleUnavailable ? 0 : exactMatches.length,
     target
   };
 

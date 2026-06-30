@@ -44,7 +44,7 @@ const EMPTY_OUTCOME: RoomSnapshot["outcome"] = {
   winnerCount: 0,
   revealAvailable: false
 };
-const ADMIN_GUESS_PREFIX = "mdp:";
+const ADMIN_GUESS_PREFIX = "pass:";
 const PEDANTIX_URL = "https://pedantix.certitudes.org/";
 const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions legales" },
@@ -148,6 +148,7 @@ export default function Home() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (state.room.articleStatus === "fallback") return;
     const value = guess.trim();
     if (!value) return;
     if (value.toLowerCase().startsWith(ADMIN_GUESS_PREFIX)) {
@@ -199,7 +200,7 @@ export default function Home() {
         <section className="article-stage">
           {outcome.hasWon || outcome.winnerCount > 0 ? <VictoryBanner outcome={outcome} /> : null}
           <ArticleTabs state={state} />
-          <ArticleSurface state={state} />
+          <ArticleSurface state={state} onRetryArticle={room.resetArticle} />
           <GuessComposer
             guess={guess}
             setGuess={setGuess}
@@ -207,6 +208,8 @@ export default function Home() {
             lastSimilarity={room.lastResult?.similarity ?? 0}
             lastResultKind={room.lastResult?.kind}
             articleLoading={room.mounted && state.room.articleStatus === "loading"}
+            articleUnavailable={state.room.articleStatus === "fallback"}
+            onRetryArticle={room.resetArticle}
             revealAvailable={outcome.revealAvailable}
             hasWon={outcome.hasWon}
             answerTitle={outcome.answerTitle}
@@ -630,7 +633,7 @@ function ArticleTabs({ state }: { state: RoomSnapshot }) {
   );
 }
 
-function ArticleSurface({ state }: { state: RoomSnapshot }) {
+function ArticleSurface({ state, onRetryArticle }: { state: RoomSnapshot; onRetryArticle: () => void }) {
   const [lengthVisibleTokens, setLengthVisibleTokens] = useState<Set<string>>(() => new Set());
   const lengthTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -682,6 +685,18 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
         <div className="loading-article">
           <Loader2 size={22} />
           Chargement d'un article Wikipedia...
+        </div>
+      ) : null}
+      {state.room.articleStatus === "fallback" ? (
+        <div className="unavailable-article">
+          <div>
+            <strong>Wikipedia indisponible</strong>
+            <span>La manche est suspendue tant qu'aucun article Wikipedia jouable n'a ete charge.</span>
+          </div>
+          <button type="button" onClick={onRetryArticle}>
+            <RefreshCw size={17} />
+            Relancer la recherche
+          </button>
         </div>
       ) : null}
       <header className="wiki-heading">
@@ -747,6 +762,8 @@ function GuessComposer({
   lastSimilarity,
   lastResultKind,
   articleLoading,
+  articleUnavailable,
+  onRetryArticle,
   revealAvailable,
   hasWon,
   answerTitle,
@@ -760,6 +777,8 @@ function GuessComposer({
   lastSimilarity: number;
   lastResultKind?: string;
   articleLoading: boolean;
+  articleUnavailable: boolean;
+  onRetryArticle: () => void;
   revealAvailable: boolean;
   hasWon: boolean;
   answerTitle?: string;
@@ -776,12 +795,24 @@ function GuessComposer({
       <div className="guess-row">
         <div className="guess-input">
           <Search size={20} />
-          <input value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Entrez un mot..." />
+          <input
+            value={guess}
+            onChange={(event) => setGuess(event.target.value)}
+            placeholder={articleUnavailable ? "Wikipedia indisponible" : "Entrez un mot..."}
+            disabled={articleLoading || articleUnavailable}
+          />
         </div>
-        <button type="submit" disabled={articleLoading}>
-          <Check size={19} />
-          Valider
-        </button>
+        {articleUnavailable ? (
+          <button type="button" onClick={onRetryArticle}>
+            <RefreshCw size={19} />
+            Relancer
+          </button>
+        ) : (
+          <button type="submit" disabled={articleLoading}>
+            <Check size={19} />
+            Valider
+          </button>
+        )}
         <div className="similarity">
           <span>Indice de similarite</span>
           <div>

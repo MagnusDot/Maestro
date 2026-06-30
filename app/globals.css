@@ -821,6 +821,47 @@ button {
   animation: spin 1s linear infinite;
 }
 
+.unavailable-article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  color: #4a2f14;
+  border: 1px solid rgba(185, 93, 45, 0.24);
+  border-radius: 7px;
+  background: rgba(238, 169, 92, 0.18);
+}
+
+.unavailable-article div {
+  display: grid;
+  gap: 3px;
+}
+
+.unavailable-article strong {
+  font-size: 14px;
+}
+
+.unavailable-article span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.unavailable-article button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: #2f2414;
+  font-weight: 900;
+  white-space: nowrap;
+  border: 1px solid rgba(101, 79, 39, 0.26);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
 .wiki-heading {
   display: flex;
   align-items: flex-start;
@@ -1163,6 +1204,11 @@ button {
   border: 0;
   outline: 0;
   background: transparent;
+}
+
+.guess-input input:disabled {
+  color: rgba(246, 242, 232, 0.48);
+  cursor: not-allowed;
 }
 
 .guess-composer button {
@@ -1704,6 +1750,11 @@ button {
   }
 
   .article-surface footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .unavailable-article {
     align-items: flex-start;
     flex-direction: column;
   }

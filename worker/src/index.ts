@@ -306,7 +306,7 @@ export class PedantixRoom {
 
 function isAdminCommand(value: string) {
   const [prefix, password = ""] = value.trim().split(":");
-  return prefix.toLowerCase() === "mdp" && isAdminPassword(password);
+  return prefix.toLowerCase() === "pass" && isAdminPassword(password);
 }
 
 function isAdminPassword(value?: string) {

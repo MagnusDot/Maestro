@@ -151,6 +151,7 @@ export type RoomSnapshot = {
     winnerCount: number;
     firstWinnerName?: string;
     answerTitle?: string;
+    answerUrl?: string;
     revealAvailable: boolean;
   };
   serverTime: number;
@@ -183,6 +184,7 @@ export type ClientMessage =
   | {
       type: "revealTitle";
       playerId: string;
+      adminPassword?: string;
     };
 
 export type ServerMessage =
@@ -202,4 +204,5 @@ export type ServerMessage =
   | {
       type: "revealTitle";
       title: string;
+      url?: string;
     };

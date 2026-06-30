@@ -1,4 +1,4 @@
-import { ARTICLES } from "./articles";
+import { stemmer as frenchStemmer } from "@orama/stemmers/french";
 import { isAutoVisibleWord, normalizeToken, normalizeWord, splitText, wordSimilarity } from "./normalize";
 import type {
   Article,
@@ -13,41 +13,7 @@ import type {
 
 const PLAYER_COLORS = ["#45a7ff", "#d8a742", "#48b879", "#ee6a5a", "#9b7cff", "#8fd14f", "#d84b83", "#45c7b7"];
 const SEMANTIC_MATCH_FLOOR = 76;
-
-const SEMANTIC_GROUPS = [
-  ["savoir", "connaissance", "connaissances", "science", "sciences", "scientifique", "recherche", "etude", "theorie", "discipline"],
-  ["film", "cinema", "cinematographique", "longmetrage", "courtmetrage", "acteur", "actrice", "realisation", "realisateur"],
-  ["serie", "episode", "saison", "television", "diffusion", "programme", "emission"],
-  ["livre", "roman", "ouvrage", "texte", "recit", "litterature", "ecrivain", "auteur", "autrice"],
-  ["musique", "chanson", "album", "artiste", "chanteur", "chanteuse", "compositeur", "composition"],
-  ["personne", "humain", "homme", "femme", "individu", "personnage", "figure", "heros", "protagoniste"],
-  ["famille", "pere", "mere", "parent", "enfant", "fils", "fille", "frere", "soeur"],
-  ["ville", "commune", "village", "capitale", "metropole", "agglomeration", "cite"],
-  ["pays", "nation", "etat", "territoire", "region", "province", "departement"],
-  ["mer", "ocean", "fleuve", "riviere", "lac", "eau", "littoral", "ile"],
-  ["montagne", "massif", "sommet", "colline", "relief", "vallee"],
-  ["politique", "gouvernement", "president", "ministre", "roi", "reine", "monarque", "parlement", "election"],
-  ["guerre", "bataille", "conflit", "combat", "armee", "militaire", "soldat"],
-  ["religion", "eglise", "dieu", "divinite", "culte", "spirituel", "mythe", "mythologie"],
-  ["sport", "match", "competition", "championnat", "joueur", "athlete", "equipe", "club"],
-  ["animal", "espece", "mammifere", "oiseau", "poisson", "insecte", "reptile"],
-  ["plante", "arbre", "fleur", "vegetal", "foret", "bois"],
-  ["couleur", "rouge", "bleu", "vert", "jaune", "noir", "blanc", "orange", "violet", "rose", "gris"],
-  ["temps", "annee", "siecle", "epoque", "periode", "date", "jour", "mois"],
-  ["naissance", "ne", "nee", "mort", "deces", "vivant", "biographie", "vie"],
-  ["travail", "metier", "profession", "emploi", "carriere", "fonction", "poste"],
-  ["lieu", "endroit", "site", "place", "localisation", "emplacement"],
-  ["construction", "batiment", "monument", "architecture", "edifice", "maison", "palais", "chateau"],
-  ["machine", "appareil", "outil", "instrument", "technique", "technologie", "invention"],
-  ["argent", "economie", "commerce", "marche", "finance", "entreprise", "societe"],
-  ["maladie", "sante", "medecine", "medical", "symptome", "traitement"],
-  ["ecole", "universite", "enseignement", "education", "eleve", "etudiant", "professeur"],
-  ["langue", "mot", "parole", "discours", "dialecte", "linguistique", "expression"],
-  ["art", "peinture", "sculpture", "dessin", "oeuvre", "musee", "artiste"],
-  ["prix", "recompense", "trophee", "medaille", "distinction", "honneur"]
-] as const;
-
-const SEMANTIC_INDEX = buildSemanticIndex(SEMANTIC_GROUPS);
+const SEMANTIC_STEM_MIN_LENGTH = 4;
 
 export function now() {
   return Date.now();
@@ -68,7 +34,7 @@ export function sanitizeRoomCode(code: string) {
 }
 
 export function createRoomState(code: string, timestamp = now()): RoomState {
-  const article = ARTICLES[Math.abs(hashString(code)) % ARTICLES.length];
+  const article = createLoadingArticle();
   return {
     code: sanitizeRoomCode(code),
     articleId: article.id,
@@ -85,7 +51,7 @@ export function createRoomState(code: string, timestamp = now()): RoomState {
     score: 0,
     streak: 0,
     round: 1,
-    articleStatus: "fallback"
+    articleStatus: "loading"
   };
 }
 
@@ -113,7 +79,7 @@ export function markArticleLoading(state: RoomState) {
 
 export function getArticle(articleId: string, article?: Article): Article {
   if (article) return article;
-  return ARTICLES.find((article) => article.id === articleId) ?? ARTICLES[0];
+  return createLoadingArticle(articleId);
 }
 
 export function joinPlayer(state: RoomState, playerId: string, playerName: string, timestamp = now()) {
@@ -155,9 +121,9 @@ export function setRoomMode(state: RoomState, mode: RoomState["mode"], playerId:
 
 export function resetRoom(state: RoomState, playerId: string, timestamp = now()) {
   if (state.hostId && state.hostId !== playerId) return false;
-  const next = createRoomState(`${state.code}${state.round + 1}`, timestamp);
-  state.articleId = next.articleId;
-  state.article = next.article;
+  const article = createLoadingArticle();
+  state.articleId = article.id;
+  state.article = article;
   state.startedAt = timestamp;
   state.foundWords = [];
   state.hintedWords = [];
@@ -167,13 +133,34 @@ export function resetRoom(state: RoomState, playerId: string, timestamp = now())
   state.score = 0;
   state.streak = 0;
   state.round += 1;
-  state.articleStatus = "fallback";
+  state.articleStatus = "loading";
   Object.values(state.players).forEach((player) => {
     player.score = 0;
     player.online = true;
     player.lastSeen = timestamp;
   });
   return true;
+}
+
+function createLoadingArticle(id = "wiki-loading"): Article {
+  return {
+    id,
+    title: "Chargement Wikipedia",
+    theme: "Culture generale",
+    category: "Encyclopedie",
+    relatedArticle: "Article lie",
+    eraPlace: "Contexte encyclopedique",
+    difficulty: 3,
+    source: "Wikipedia francophone",
+    updatedAt: "chargement",
+    provider: "fallback",
+    sections: [
+      {
+        heading: "Introduction",
+        body: ["Chargement de l'article Wikipedia en cours."]
+      }
+    ]
+  };
 }
 
 export function submitGuess(state: RoomState, playerId: string, rawWord: string, timestamp = now()): GuessEntry {
@@ -204,18 +191,25 @@ export function submitGuess(state: RoomState, playerId: string, rawWord: string,
     similarity = 100;
     target = normalizeTitle(article.title);
     if (!alreadyWinner) {
-      state.winners[playerId] = {
-        playerId,
-        playerName: player.name,
-        at: timestamp
-      };
+      recordWinner(state, player, playerId, timestamp);
     }
   } else if (exactMatches.length > 0 && !alreadyFound) {
+    const titleWords = getTitleWords(article);
+    const completesTitle =
+      titleWords.includes(normalized) &&
+      titleWords.every((titleWord) => titleWord === normalized || state.foundWords.includes(titleWord));
+    const wordPoints = 80 + exactMatches.length * 20 + Math.min(60, state.streak * 10);
     kind = "found";
-    points = 80 + exactMatches.length * 20 + Math.min(60, state.streak * 10);
+    points = wordPoints;
     similarity = 100;
     state.foundWords.push(normalized);
     state.streak += 1;
+    if (completesTitle && !state.winners[playerId]) {
+      kind = "solved";
+      points = wordPoints + 1000;
+      target = normalizeTitle(article.title);
+      recordWinner(state, player, playerId, timestamp);
+    }
   } else if (exactMatches.length > 0 || previousGuess) {
     kind = "duplicate";
     points = 0;
@@ -322,6 +316,7 @@ export function createRoomSnapshot(state: RoomState, timestamp = now(), viewerId
       winnerCount: winnerEntries.length,
       firstWinnerName: winnerEntries[0]?.playerName,
       answerTitle: hasWon ? article.title : undefined,
+      answerUrl: hasWon ? article.url : undefined,
       revealAvailable: winnerEntries.length > 0 && !hasWon
     },
     serverTime: timestamp
@@ -454,6 +449,18 @@ function getPlayableWords(article: Article) {
   return collectWords(values);
 }
 
+function getTitleWords(article: Article) {
+  return [...new Set(collectWords([article.title]).map((word) => word.normalized))];
+}
+
+function recordWinner(state: RoomState, player: Player, playerId: string, timestamp: number) {
+  state.winners[playerId] = {
+    playerId,
+    playerName: player.name,
+    at: timestamp
+  };
+}
+
 function collectWords(values: string[]) {
   const words: { raw: string; normalized: string }[] = [];
   values.forEach((value) => {
@@ -520,40 +527,13 @@ function semanticSimilarity(guess: string, candidate: string) {
 
   const guessStem = semanticStem(guess);
   const candidateStem = semanticStem(candidate);
-  if (guessStem.length >= 5 && guessStem === candidateStem) return 88;
+  if (guessStem.length >= SEMANTIC_STEM_MIN_LENGTH && guessStem === candidateStem) return 88;
 
-  const guessGroups = SEMANTIC_INDEX.get(guess) ?? SEMANTIC_INDEX.get(guessStem);
-  const candidateGroups = SEMANTIC_INDEX.get(candidate) ?? SEMANTIC_INDEX.get(candidateStem);
-  if (!guessGroups || !candidateGroups) return 0;
-
-  const sharedGroup = [...guessGroups].some((group) => candidateGroups.has(group));
-  if (!sharedGroup) return 0;
-
-  if (Math.min(guess.length, candidate.length) <= 3) return 88;
-  return 84;
+  return 0;
 }
 
 function semanticStem(word: string) {
-  return word
-    .replace(/(?:ements|ement|ations|ation|iques|ique|istes|iste|eurs|euses|euse|teur|trice)$/u, "")
-    .replace(/(?:aux)$/u, "al")
-    .replace(/(?:es|s|x)$/u, "");
-}
-
-function buildSemanticIndex(groups: readonly (readonly string[])[]) {
-  const index = new Map<string, Set<number>>();
-  groups.forEach((group, groupIndex) => {
-    group.forEach((term) => {
-      const normalized = normalizeToken(term);
-      const stem = semanticStem(normalized);
-      [normalized, stem].filter(Boolean).forEach((key) => {
-        const existing = index.get(key) ?? new Set<number>();
-        existing.add(groupIndex);
-        index.set(key, existing);
-      });
-    });
-  });
-  return index;
+  return frenchStemmer(normalizeToken(word));
 }
 
 function revealPattern(word: string) {
@@ -577,13 +557,4 @@ function normalizeTitle(value: string) {
 function cleanPlayerName(name: string) {
   const cleaned = name.trim().slice(0, 18);
   return cleaned || "Joueur";
-}
-
-function hashString(value: string) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash;
 }

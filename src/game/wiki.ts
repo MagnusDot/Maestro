@@ -1,4 +1,3 @@
-import { ARTICLES } from "./articles";
 import { countCandidateWords } from "./engine";
 import type { Article } from "./types";
 
@@ -183,19 +182,25 @@ function isPlayableArticle(article: Article) {
   );
 }
 
-export function fallbackArticle() {
-  const article = ARTICLES[Math.floor(Math.random() * ARTICLES.length)];
-  const paragraphs = article.sections.flatMap((section) => section.body).map(cleanParagraph).filter(Boolean);
+export function fallbackArticle(): Article {
   return {
-    ...article,
+    id: "wikipedia-indisponible",
+    title: "Wikipedia indisponible",
+    theme: "Technique",
+    category: "Service externe",
+    relatedArticle: "Wikipedia",
+    eraPlace: "Contexte encyclopedique",
+    difficulty: 2,
+    source: "Message de secours",
+    updatedAt: "fallback hors-ligne",
+    provider: "fallback" as const,
     sections: [
       {
         heading: "Introduction",
-        body: selectWholeParagraphs(paragraphs, TARGET_ARTICLE_WORDS)
+        body: [
+          "Wikipedia est momentanement indisponible pour cette room, ou aucun article aleatoire assez long n'a pu etre selectionne apres plusieurs essais. Le jeu attend normalement une introduction encyclopedique d'environ cent mots, composee de paragraphes complets, afin de proposer assez de mots a retrouver sans tronquer le texte original. Relancez un nouvel article dans quelques instants pour tenter un nouveau chargement depuis Wikipedia francophone. Ce texte de secours conserve une manche jouable pendant l'incident, mais il n'est pas destine a remplacer les vrais articles de l'encyclopedie. Les joueurs peuvent continuer a tester les propositions, puis recommencer la manche lorsque la connexion retrouve une page admissible."
+        ]
       }
-    ],
-    provider: "fallback" as const,
-    source: "Article local de secours",
-    updatedAt: "fallback hors-ligne"
+    ]
   };
 }

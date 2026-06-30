@@ -43,6 +43,8 @@ const EMPTY_OUTCOME: RoomSnapshot["outcome"] = {
   winnerCount: 0,
   revealAvailable: false
 };
+const ADMIN_GUESS_PREFIX = "mdp:";
+const PEDANTIX_URL = "https://pedantix.certitudes.org/";
 
 const DEMO_STATE: RoomSnapshot = {
   room: {
@@ -140,8 +142,14 @@ export default function Home() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!guess.trim()) return;
-    room.submitGuess(guess);
+    const value = guess.trim();
+    if (!value) return;
+    if (value.toLowerCase().startsWith(ADMIN_GUESS_PREFIX)) {
+      room.requestAdminTitle(value.slice(ADMIN_GUESS_PREFIX.length).trim());
+      setGuess("");
+      return;
+    }
+    room.submitGuess(value);
     setGuess("");
   }
 
@@ -183,7 +191,7 @@ export default function Home() {
 
       <div className="game-layout">
         <section className="article-stage">
-          {outcome.winnerCount > 0 ? <VictoryBanner outcome={outcome} /> : null}
+          {outcome.hasWon || outcome.winnerCount > 0 ? <VictoryBanner outcome={outcome} /> : null}
           <ArticleTabs state={state} />
           <ArticleSurface state={state} />
           <GuessComposer
@@ -195,6 +203,8 @@ export default function Home() {
             articleLoading={room.mounted && state.room.articleStatus === "loading"}
             revealAvailable={outcome.revealAvailable}
             hasWon={outcome.hasWon}
+            answerTitle={outcome.answerTitle}
+            answerUrl={outcome.answerUrl}
             revealChecked={revealChecked}
             onReveal={() => {
               setRevealChecked(true);
@@ -231,9 +241,31 @@ export default function Home() {
             </label>
             <p>
               Les articles sont charges automatiquement depuis Wikipedia cote room. Si l'API est indisponible, la
-              manche bascule sur un article de secours.
+              manche affiche un message de secours.
             </p>
             <button type="button" onClick={() => setSettingsOpen(false)}>
+              <Check size={18} />
+              Fermer
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {room.adminArticle ? (
+        <div className="modal-backdrop" onClick={room.clearAdminTitle}>
+          <div className="modal admin-modal" onClick={(event) => event.stopPropagation()}>
+            <div>
+              <p className="eyebrow">Mode admin</p>
+              <h2>Article a trouver</h2>
+            </div>
+            <strong className="admin-answer">{room.adminArticle.title}</strong>
+            {room.adminArticle.url ? (
+              <a className="admin-link" href={room.adminArticle.url} target="_blank" rel="noreferrer">
+                <ExternalLink size={18} />
+                Ouvrir l'article Wikipedia
+              </a>
+            ) : null}
+            <button type="button" onClick={room.clearAdminTitle}>
               <Check size={18} />
               Fermer
             </button>
@@ -251,6 +283,12 @@ function VictoryBanner({ outcome }: { outcome: RoomSnapshot["outcome"] }) {
       {outcome.hasWon ? (
         <span>
           Bravo, titre trouve : <strong>{outcome.answerTitle}</strong>
+          {outcome.answerUrl ? (
+            <a className="admin-link victory-link" href={outcome.answerUrl} target="_blank" rel="noreferrer">
+              <ExternalLink size={16} />
+              Ouvrir l'article
+            </a>
+          ) : null}
         </span>
       ) : (
         <span>
@@ -341,6 +379,8 @@ function StartScreen({
             Rejoindre
           </button>
         </form>
+
+        <PedantixCredit className="start-credit" />
       </section>
     </main>
   );
@@ -585,6 +625,43 @@ function ArticleTabs({ state }: { state: RoomSnapshot }) {
 }
 
 function ArticleSurface({ state }: { state: RoomSnapshot }) {
+  const [lengthVisibleTokens, setLengthVisibleTokens] = useState<Set<string>>(() => new Set());
+  const lengthTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    setLengthVisibleTokens(new Set());
+    lengthTimers.current.forEach((timer) => clearTimeout(timer));
+    lengthTimers.current.clear();
+  }, [state.room.startedAt]);
+
+  useEffect(() => {
+    return () => {
+      lengthTimers.current.forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const showTokenLength = (tokenId: string) => {
+    setLengthVisibleTokens((current) => {
+      const next = new Set(current);
+      next.add(tokenId);
+      return next;
+    });
+
+    const currentTimer = lengthTimers.current.get(tokenId);
+    if (currentTimer) clearTimeout(currentTimer);
+
+    const timer = setTimeout(() => {
+      lengthTimers.current.delete(tokenId);
+      setLengthVisibleTokens((current) => {
+        const next = new Set(current);
+        next.delete(tokenId);
+        return next;
+      });
+    }, 3000);
+
+    lengthTimers.current.set(tokenId, timer);
+  };
+
   return (
     <article className="article-surface">
       <div className="article-progress">
@@ -602,7 +679,7 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
         </div>
       ) : null}
       <header className="wiki-heading">
-        <h1>{renderTokens(state.article.title)}</h1>
+        <h1>{renderTokens(state.article.title, lengthVisibleTokens, showTokenLength)}</h1>
         <button type="button" aria-label="Modifier le titre">
           <ScrollText size={19} />
         </button>
@@ -620,17 +697,29 @@ function ArticleSurface({ state }: { state: RoomSnapshot }) {
       </div>
       {state.article.sections.map((section, index) => (
         <section key={index} className="wiki-section">
-          {index > 0 ? <h2>{renderTokens(section.heading)}</h2> : null}
+          {index > 0 ? <h2>{renderTokens(section.heading, lengthVisibleTokens, showTokenLength)}</h2> : null}
           {section.body.map((paragraph, paragraphIndex) => (
-            <p key={paragraphIndex}>{renderTokens(paragraph)}</p>
+            <p key={paragraphIndex}>{renderTokens(paragraph, lengthVisibleTokens, showTokenLength)}</p>
           ))}
         </section>
       ))}
       <footer>
-        <Sparkles size={16} />
-        Les mots trouves restent surlignes. Les indices temporels revelent des themes, lettres et sections.
+        <span>
+          <Sparkles size={16} />
+          Les mots trouves restent surlignes. Les indices temporels revelent des themes, lettres et sections.
+        </span>
+        <PedantixCredit />
       </footer>
     </article>
+  );
+}
+
+function PedantixCredit({ className }: { className?: string }) {
+  return (
+    <a className={clsx("pedantix-credit", className)} href={PEDANTIX_URL} target="_blank" rel="noreferrer">
+      Inspire par Pedantix
+      <ExternalLink size={13} />
+    </a>
   );
 }
 
@@ -643,6 +732,8 @@ function GuessComposer({
   articleLoading,
   revealAvailable,
   hasWon,
+  answerTitle,
+  answerUrl,
   revealChecked,
   onReveal
 }: {
@@ -654,6 +745,8 @@ function GuessComposer({
   articleLoading: boolean;
   revealAvailable: boolean;
   hasWon: boolean;
+  answerTitle?: string;
+  answerUrl?: string;
   revealChecked: boolean;
   onReveal: () => void;
 }) {
@@ -702,6 +795,17 @@ function GuessComposer({
         <span>Révéler</span>
         <small>{hasWon ? "Article dévoilé" : revealAvailable ? "Mettre le titre trouvé dans la validation" : "Disponible quand un joueur trouve"}</small>
       </label>
+      {hasWon ? (
+        <div className="winner-actions">
+          <span>{answerTitle ? `Titre : ${answerTitle}` : "Tous les mots sont reveles pour vous."}</span>
+          {answerUrl ? (
+            <a className="admin-link victory-link" href={answerUrl} target="_blank" rel="noreferrer">
+              <ExternalLink size={16} />
+              Ouvrir l'article
+            </a>
+          ) : null}
+        </div>
+      ) : null}
     </form>
   );
 }
@@ -827,19 +931,24 @@ function SimilarityDots({ value }: { value: number }) {
   );
 }
 
-function renderTokens(tokens: TokenView[]) {
+function renderTokens(tokens: TokenView[], lengthVisibleTokens: Set<string>, showTokenLength: (tokenId: string) => void) {
   return tokens.map((token) => {
     if (token.kind !== "word") return token.text;
     if (token.status === "masked") {
+      const showLength = lengthVisibleTokens.has(token.id);
+      const length = token.length ?? 0;
       return (
-        <span
+        <button
+          type="button"
           key={token.id}
-          className={clsx("mask-token", token.nearGuess && "near")}
+          className={clsx("mask-token", token.nearGuess && "near", showLength && "length-visible")}
           style={{ "--token": token.length ?? 5 } as CSSProperties}
-          title={token.nearGuess ? `${token.nearGuess} - ${token.nearSimilarity}% proche` : undefined}
+          title={showLength ? `${length} lettres` : token.nearGuess ? `${token.nearGuess} - ${token.nearSimilarity}% proche` : "Afficher le nombre de lettres"}
+          aria-label={showLength ? `Mot masque de ${length} lettres` : "Afficher le nombre de lettres du mot masque"}
+          onClick={() => showTokenLength(token.id)}
         >
-          {token.nearGuess ? <span className="near-guess">{token.nearGuess}</span> : " "}
-        </span>
+          {showLength ? <span className="mask-length">{length}</span> : token.nearGuess ? <span className="near-guess">{token.nearGuess}</span> : " "}
+        </button>
       );
     }
     return (

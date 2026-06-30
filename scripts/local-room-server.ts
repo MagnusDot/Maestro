@@ -24,6 +24,7 @@ type Session = {
 };
 
 const PORT = 8787;
+const ADMIN_PASSWORD = "alois";
 const rooms = new Map<string, RoomState>();
 const sessions = new Set<Session>();
 const server = new WebSocketServer({ port: PORT });
@@ -81,6 +82,12 @@ async function handleMessage(session: Session, data: string) {
   }
 
   if (message.type === "guess") {
+    if (isAdminCommand(message.word)) {
+      const article = getArticle(room.articleId, room.article);
+      send(session.socket, { type: "revealTitle", title: article.title, url: article.url });
+      return;
+    }
+
     const result = submitGuess(room, message.playerId, message.word, timestamp);
     broadcastGuessResult(session.roomCode, room, result);
     if (result.kind === "solved") {
@@ -95,7 +102,8 @@ async function handleMessage(session: Session, data: string) {
   }
 
   if (message.type === "revealTitle") {
-    if (Object.keys(room.winners ?? {}).length === 0) {
+    const canReveal = Object.keys(room.winners ?? {}).length > 0 || isAdminPassword(message.adminPassword);
+    if (!canReveal) {
       send(session.socket, {
         type: "notice",
         level: "warning",
@@ -104,7 +112,7 @@ async function handleMessage(session: Session, data: string) {
       return;
     }
     const article = getArticle(room.articleId, room.article);
-    send(session.socket, { type: "revealTitle", title: article.title });
+    send(session.socket, { type: "revealTitle", title: article.title, url: article.url });
     return;
   }
 
@@ -160,6 +168,15 @@ async function loadFreshArticle(room: RoomState) {
   } catch {
     installArticle(room, fallbackArticle());
   }
+}
+
+function isAdminCommand(value: string) {
+  const [prefix, password = ""] = value.trim().split(":");
+  return prefix.toLowerCase() === "mdp" && isAdminPassword(password);
+}
+
+function isAdminPassword(value?: string) {
+  return value?.trim().toLowerCase() === ADMIN_PASSWORD;
 }
 
 function broadcastState(code: string, room: RoomState) {

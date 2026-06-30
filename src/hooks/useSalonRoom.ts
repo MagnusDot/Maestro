@@ -12,6 +12,11 @@ type Notice = {
   message: string;
 };
 
+type AdminArticle = {
+  title: string;
+  url?: string;
+};
+
 const EMPTY_OUTCOME: RoomSnapshot["outcome"] = {
   hasWon: false,
   winnerCount: 0,
@@ -27,10 +32,12 @@ export function useSalonRoom() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [lastResult, setLastResult] = useState<GuessEntry | null>(null);
   const [revealedTitle, setRevealedTitle] = useState("");
+  const [adminArticle, setAdminArticle] = useState<AdminArticle | null>(null);
   const [pageBaseUrl, setPageBaseUrl] = useState("");
   const [mounted, setMounted] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
   const pendingModeRef = useRef<GameMode | null>(null);
+  const pendingTitleRevealRef = useRef<"fill" | "admin">("fill");
 
   useEffect(() => {
     setMounted(true);
@@ -85,7 +92,12 @@ export function useSalonRoom() {
         setLastResult(message.result);
       }
       if (message.type === "revealTitle") {
-        setRevealedTitle(message.title);
+        if (pendingTitleRevealRef.current === "admin") {
+          setAdminArticle({ title: message.title, url: message.url });
+        } else {
+          setRevealedTitle(message.title);
+        }
+        pendingTitleRevealRef.current = "fill";
       }
     });
 
@@ -132,14 +144,25 @@ export function useSalonRoom() {
   const resetArticle = useCallback(() => {
     if (!playerId) return false;
     setRevealedTitle("");
+    setAdminArticle(null);
     setLastResult(null);
     return send({ type: "reset", playerId });
   }, [playerId, send]);
 
   const requestRevealTitle = useCallback(() => {
     if (!playerId) return false;
+    pendingTitleRevealRef.current = "fill";
     return send({ type: "revealTitle", playerId });
   }, [playerId, send]);
+
+  const requestAdminTitle = useCallback(
+    (adminPassword: string) => {
+      if (!playerId) return false;
+      pendingTitleRevealRef.current = "admin";
+      return send({ type: "revealTitle", playerId, adminPassword });
+    },
+    [playerId, send]
+  );
 
   const joinRoom = useCallback((code: string) => {
     const sanitized = sanitizeRoomCode(code);
@@ -147,6 +170,7 @@ export function useSalonRoom() {
     setState(null);
     setLastResult(null);
     setRevealedTitle("");
+    setAdminArticle(null);
     setRoomCode(sanitized);
     updateRoomUrl(sanitized);
   }, []);
@@ -157,6 +181,7 @@ export function useSalonRoom() {
     setState(null);
     setLastResult(null);
     setRevealedTitle("");
+    setAdminArticle(null);
     setRoomCode(code);
     updateRoomUrl(code);
   }, []);
@@ -167,8 +192,13 @@ export function useSalonRoom() {
     setState(null);
     setLastResult(null);
     setRevealedTitle("");
+    setAdminArticle(null);
     setRoomCode(code);
     updateRoomUrl(code);
+  }, []);
+
+  const clearAdminTitle = useCallback(() => {
+    setAdminArticle(null);
   }, []);
 
   const updatePlayerName = useCallback((name: string) => {
@@ -205,12 +235,15 @@ export function useSalonRoom() {
     notices,
     lastResult,
     revealedTitle,
+    adminArticle,
     inviteUrl,
     mounted,
     submitGuess,
     changeMode,
     resetArticle,
     requestRevealTitle,
+    requestAdminTitle,
+    clearAdminTitle,
     joinRoom,
     createRoom,
     playSolo,

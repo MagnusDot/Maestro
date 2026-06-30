@@ -16,6 +16,8 @@ import {
 import type { ClientMessage, GuessEntry, RoomState, ServerMessage } from "../../src/game/types";
 import { fallbackArticle, fetchRandomWikipediaArticle } from "../../src/game/wiki";
 
+const ADMIN_PASSWORD = "alois";
+
 export type Env = {
   ROOMS: DurableObjectNamespace;
 };
@@ -58,7 +60,7 @@ export class PedantixRoom {
     }
 
     const roomState = await this.loadState(code);
-    if (roomState.articleStatus === "fallback") {
+    if (roomState.articleStatus === "loading" || roomState.articleStatus === "fallback") {
       await this.loadFreshArticle(roomState);
     }
 
@@ -112,6 +114,12 @@ export class PedantixRoom {
     }
 
     if (message.type === "guess") {
+      if (isAdminCommand(message.word)) {
+        const article = getArticle(roomState.articleId, roomState.article);
+        this.send(session.socket, { type: "revealTitle", title: article.title, url: article.url });
+        return;
+      }
+
       const result = submitGuess(roomState, message.playerId, message.word, timestamp);
       await this.save(roomState);
       this.broadcastGuessResult(roomState, result);
@@ -127,7 +135,8 @@ export class PedantixRoom {
     }
 
     if (message.type === "revealTitle") {
-      if (Object.keys(roomState.winners ?? {}).length === 0) {
+      const canReveal = Object.keys(roomState.winners ?? {}).length > 0 || isAdminPassword(message.adminPassword);
+      if (!canReveal) {
         this.send(session.socket, {
           type: "notice",
           level: "warning",
@@ -136,7 +145,7 @@ export class PedantixRoom {
         return;
       }
       const article = getArticle(roomState.articleId, roomState.article);
-      this.send(session.socket, { type: "revealTitle", title: article.title });
+      this.send(session.socket, { type: "revealTitle", title: article.title, url: article.url });
       return;
     }
 
@@ -241,4 +250,13 @@ export class PedantixRoom {
       // The close event will clean the dead session.
     }
   }
+}
+
+function isAdminCommand(value: string) {
+  const [prefix, password = ""] = value.trim().split(":");
+  return prefix.toLowerCase() === "mdp" && isAdminPassword(password);
+}
+
+function isAdminPassword(value?: string) {
+  return value?.trim().toLowerCase() === ADMIN_PASSWORD;
 }
